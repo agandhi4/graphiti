@@ -178,6 +178,7 @@ class GraphitiService:
             # Create LLM client based on configured provider
             try:
                 llm_client = LLMClientFactory.create(self.config.llm)
+                logger.info(f'LLM client type: {type(llm_client).__name__}, provider: {self.config.llm.provider}')
             except Exception as e:
                 logger.warning(f'Failed to create LLM client: {e}')
 
@@ -186,6 +187,26 @@ class GraphitiService:
                 embedder_client = EmbedderFactory.create(self.config.embedder)
             except Exception as e:
                 logger.warning(f'Failed to create embedder client: {e}')
+
+            # Create cross-encoder using embedder's OpenAI config (e.g. Ollama)
+            # to avoid falling back to the real OpenAI API
+            cross_encoder_client = None
+            try:
+                from graphiti_core.cross_encoder.openai_reranker_client import OpenAIRerankerClient
+                from graphiti_core.llm_client.config import LLMConfig as CoreLLMConfig
+
+                embedder_cfg = self.config.embedder
+                provider_obj = getattr(embedder_cfg.providers, embedder_cfg.provider, None)
+                api_key = getattr(provider_obj, 'api_key', 'ollama') if provider_obj else 'ollama'
+                api_url = getattr(provider_obj, 'api_url', 'http://localhost:11434/v1') if provider_obj else 'http://localhost:11434/v1'
+                reranker_config = CoreLLMConfig(
+                    api_key=api_key,
+                    base_url=api_url,
+                )
+                cross_encoder_client = OpenAIRerankerClient(config=reranker_config)
+                logger.info(f'Cross-encoder using {api_url} with key={api_key[:10]}...')
+            except Exception as e:
+                logger.warning(f'Failed to create cross-encoder client: {e}')
 
             # Get database configuration
             db_config = DatabaseDriverFactory.create_config(self.config.database)
@@ -211,7 +232,28 @@ class GraphitiService:
 
             # Initialize Graphiti client with appropriate driver
             try:
-                if self.config.database.provider.lower() == 'falkordb':
+                if self.config.database.provider.lower() == 'falkordblite':
+                    # For FalkorDB Lite, create an embedded driver instance
+                    from graphiti_core.driver.falkordb_lite_driver import FalkorLiteDriver
+
+                    import os
+
+                    path = db_config['path']
+                    os.makedirs(os.path.dirname(path) if not os.path.isdir(path) else path, exist_ok=True)
+
+                    lite_driver = FalkorLiteDriver(
+                        path=path,
+                        database=db_config['database'],
+                    )
+
+                    self.client = Graphiti(
+                        graph_driver=lite_driver,
+                        llm_client=llm_client,
+                        embedder=embedder_client,
+                        cross_encoder=cross_encoder_client,
+                        max_coroutines=self.semaphore_limit,
+                    )
+                elif self.config.database.provider.lower() == 'falkordb':
                     # For FalkorDB, create a FalkorDriver instance directly
                     from graphiti_core.driver.falkordb_driver import FalkorDriver
 
@@ -226,6 +268,7 @@ class GraphitiService:
                         graph_driver=falkor_driver,
                         llm_client=llm_client,
                         embedder=embedder_client,
+                        cross_encoder=cross_encoder_client,
                         max_coroutines=self.semaphore_limit,
                     )
                 else:
@@ -236,6 +279,7 @@ class GraphitiService:
                         password=db_config['password'],
                         llm_client=llm_client,
                         embedder=embedder_client,
+                        cross_encoder=cross_encoder_client,
                         max_coroutines=self.semaphore_limit,
                     )
             except Exception as db_error:
@@ -806,7 +850,7 @@ async def initialize_server() -> ServerConfig:
     )
     parser.add_argument(
         '--database-provider',
-        choices=['neo4j', 'falkordb'],
+        choices=['neo4j', 'falkordb', 'falkordblite'],
         help='Database provider to use',
     )
 

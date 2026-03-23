@@ -1,0 +1,53 @@
+# Local Graphiti MCP Server — embedded FalkorDB Lite + Haiku + Ollama embeddings
+# No Docker, no external services (except Ollama which is already running)
+
+server:
+  transport: "sse"
+  host: "127.0.0.1"
+  port: 11436
+
+llm:
+  provider: "anthropic"
+  model: "claude-haiku-4-5-20251001"
+  temperature: 0.0
+  max_tokens: 4096
+
+  providers:
+    anthropic:
+      api_key: "dummy-proxied-via-claude-code"
+      api_url: "http://127.0.0.1:11437"
+
+embedder:
+  provider: "openai"  # Ollama exposes OpenAI-compatible API
+  model: "nomic-embed-text"
+  dimensions: 768
+
+  providers:
+    openai:
+      api_key: "ollama"
+      api_url: "http://localhost:11434/v1"
+
+database:
+  provider: "falkordblite"
+
+  providers:
+    falkordblite:
+      path: "${HOME}/.graphiti/data"
+      database: "maplog"
+
+graphiti:
+  group_id: "maplog"
+  user_id: "aakash"
+  entity_types:
+    - name: "CodePattern"
+      description: "Recurring code patterns, conventions, or architectural decisions in a codebase"
+    - name: "Gotcha"
+      description: "Non-obvious bugs, pitfalls, or traps that are easy to hit and hard to debug"
+    - name: "Component"
+      description: "A named code component: class, struct, service, view, viewmodel, or module"
+    - name: "Dependency"
+      description: "A relationship where one component depends on, imports, or calls another"
+    - name: "Preference"
+      description: "User preferences, workflow choices, or tool configuration decisions"
+    - name: "Procedure"
+      description: "Standard operating procedures, build steps, or multi-step workflows"

@@ -191,11 +191,19 @@ class FalkorDBProviderConfig(BaseModel):
     database: str = 'default_db'
 
 
+class FalkorDBLiteProviderConfig(BaseModel):
+    """FalkorDB Lite (embedded) provider configuration."""
+
+    path: str = '~/.graphiti/data'
+    database: str = 'default_db'
+
+
 class DatabaseProvidersConfig(BaseModel):
     """Database providers configuration."""
 
     neo4j: Neo4jProviderConfig | None = None
     falkordb: FalkorDBProviderConfig | None = None
+    falkordblite: FalkorDBLiteProviderConfig | None = None
 
 
 class DatabaseConfig(BaseModel):

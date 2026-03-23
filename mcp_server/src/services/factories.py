@@ -201,6 +201,7 @@ class LLMClientFactory:
 
                 llm_config = GraphitiLLMConfig(
                     api_key=api_key,
+                    base_url=config.providers.anthropic.api_url,
                     model=config.model,
                     temperature=config.temperature,
                     max_tokens=config.max_tokens,
@@ -429,6 +430,25 @@ class DatabaseDriverFactory:
                     'port': port,
                     'password': password,
                     'database': falkor_config.database,
+                }
+
+            case 'falkordblite':
+                # Use FalkorDB Lite config if provided, otherwise use defaults
+                if config.providers.falkordblite:
+                    lite_config = config.providers.falkordblite
+                else:
+                    from config.schema import FalkorDBLiteProviderConfig
+
+                    lite_config = FalkorDBLiteProviderConfig()
+
+                import os
+
+                path = os.path.expanduser(lite_config.path)
+
+                return {
+                    'driver': 'falkordblite',
+                    'path': path,
+                    'database': lite_config.database,
                 }
 
             case _:
