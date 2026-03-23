@@ -143,6 +143,7 @@ class AnthropicClient(LLMClient):
         if not client:
             self.client = AsyncAnthropic(
                 api_key=config.api_key,
+                base_url=config.base_url,
                 max_retries=1,
             )
         else:
