@@ -18,14 +18,14 @@ llm:
       api_url: "http://127.0.0.1:11437"
 
 embedder:
-  provider: "openai"  # Ollama exposes OpenAI-compatible API
-  model: "nomic-embed-text"
+  provider: "openai"  # LM Studio exposes OpenAI-compatible API
+  model: "text-embedding-nomic-embed-text-v1.5"
   dimensions: 768
 
   providers:
     openai:
-      api_key: "ollama"
-      api_url: "http://localhost:11434/v1"
+      api_key: "lm-studio"
+      api_url: "http://localhost:1234/v1"
 
 database:
   provider: "falkordblite"
