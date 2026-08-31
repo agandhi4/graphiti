@@ -1251,8 +1251,14 @@ async def initialize_server() -> ServerConfig:
     graphiti_client = await graphiti_service.get_client()
     semaphore = graphiti_service.semaphore
 
-    # Initialize queue service with the client
-    await queue_service.initialize(graphiti_client)
+    # Initialize queue service with the client. The type registries are the
+    # replay defaults for episodes spooled to disk by a previous process.
+    await queue_service.initialize(
+        graphiti_client,
+        entity_types=graphiti_service.entity_types,
+        edge_types=graphiti_service.edge_types,
+        edge_type_map=graphiti_service.edge_type_map,
+    )
 
     # Set MCP server settings
     if config.server.host:
