@@ -588,5 +588,28 @@ class DatabaseDriverFactory:
                     'database': database,
                 }
 
+            case 'falkordblite':
+                # Embedded FalkorDB: the stock FalkorDriver is used with an injected
+                # redislite AsyncFalkorDB client (constructed in graphiti_mcp_server).
+                if not HAS_FALKOR:
+                    raise ValueError(
+                        'FalkorDB driver not available in current graphiti-core version'
+                    )
+
+                if config.providers.falkordblite:
+                    lite_config = config.providers.falkordblite
+                else:
+                    from config.schema import FalkorDBLiteProviderConfig
+
+                    lite_config = FalkorDBLiteProviderConfig()
+
+                import os
+
+                return {
+                    'driver': 'falkordblite',
+                    'path': os.path.expanduser(lite_config.path),
+                    'database': lite_config.database,
+                }
+
             case _:
                 raise ValueError(f'Unsupported Database provider: {provider}')

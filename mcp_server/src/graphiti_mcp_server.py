@@ -235,7 +235,30 @@ class GraphitiService:
 
             # Initialize Graphiti client with appropriate driver
             try:
-                if self.config.database.provider.lower() == 'falkordb':
+                if self.config.database.provider.lower() == 'falkordblite':
+                    # Embedded FalkorDB: build the redislite client ourselves and
+                    # inject it into the stock FalkorDriver (no external server).
+                    import os
+
+                    from graphiti_core.driver.falkordb_driver import FalkorDriver
+                    from redislite.async_falkordb_client import AsyncFalkorDB
+
+                    path = db_config['path']
+                    os.makedirs(os.path.dirname(path) or '.', exist_ok=True)
+
+                    lite_driver = FalkorDriver(
+                        falkor_db=AsyncFalkorDB(dbfilename=path),
+                        database=db_config['database'],
+                    )
+
+                    self.client = Graphiti(
+                        graph_driver=lite_driver,
+                        llm_client=llm_client,
+                        embedder=embedder_client,
+                        cross_encoder=cross_encoder_client,
+                        max_coroutines=self.semaphore_limit,
+                    )
+                elif self.config.database.provider.lower() == 'falkordb':
                     # For FalkorDB, create a FalkorDriver instance directly
                     from graphiti_core.driver.falkordb_driver import FalkorDriver
 
@@ -1142,7 +1165,7 @@ async def initialize_server() -> ServerConfig:
     )
     parser.add_argument(
         '--database-provider',
-        choices=['neo4j', 'falkordb'],
+        choices=['neo4j', 'falkordb', 'falkordblite'],
         help='Database provider to use',
     )
 
