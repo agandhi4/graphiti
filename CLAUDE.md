@@ -2,6 +2,8 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+> **Fork notice**: this checkout is the personal fork `agandhi4/graphiti`. Read @FORK.md for the fork's delta, local deployment (launchd service, claude-proxy, durable spool), and rebase procedure — before changing mcp_server or driver code.
+
 ## Project Overview
 
 Graphiti is a Python framework for building temporally-aware knowledge graphs designed for AI agents. It enables real-time incremental updates to knowledge graphs without batch recomputation, making it suitable for dynamic environments.
