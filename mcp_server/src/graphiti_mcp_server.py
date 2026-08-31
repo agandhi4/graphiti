@@ -435,7 +435,6 @@ async def add_memory(
             content=episode_body,
             source_description=source_description,
             episode_type=episode_type,
-            entity_types=graphiti_service.entity_types,
             uuid=uuid or None,  # Ensure None is passed if uuid is None
         )
 
@@ -936,8 +935,9 @@ async def initialize_server() -> ServerConfig:
     graphiti_client = await graphiti_service.get_client()
     semaphore = graphiti_service.semaphore
 
-    # Initialize queue service with the client
-    await queue_service.initialize(graphiti_client)
+    # Initialize queue service with the client; entity_types is global config,
+    # injected here so spooled episodes can be replayed across restarts
+    await queue_service.initialize(graphiti_client, graphiti_service.entity_types)
 
     # Set MCP server settings
     if config.server.host:
