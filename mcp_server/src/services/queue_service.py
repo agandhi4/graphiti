@@ -116,6 +116,10 @@ class QueueService:
             self._episode_queues[record.group_id] = asyncio.Queue()
         await self._episode_queues[record.group_id].put(record)
         if not self._queue_workers.get(record.group_id, False):
+            # Claim the flag before create_task runs: rapid enqueues (startup
+            # recovery) would otherwise spawn duplicate workers per group and
+            # break sequential-per-group processing.
+            self._queue_workers[record.group_id] = True
             asyncio.create_task(self._process_episode_queue(record.group_id))
         return self._episode_queues[record.group_id].qsize()
 
