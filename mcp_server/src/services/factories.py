@@ -247,6 +247,8 @@ class LLMClientFactory:
 
                 llm_config = GraphitiLLMConfig(
                     api_key=api_key,
+                    # Honor api_url so the client can target a local proxy
+                    base_url=config.providers.anthropic.api_url,
                     model=config.model,
                     # None is intentional for reasoning models; core LLMConfig stores it
                     # verbatim and downstream clients omit temperature when it is None.
